@@ -659,6 +659,7 @@ CA_marine_meta <- data.frame(sample_data(CA_marine_ps))
 mixed_meta <- data.frame(sample_data(CA_marine_ps_mixed))
 
 abund_mixed <- data.frame(t(otu_table(CA_marine_ps_mixed)))
+abund <- data.frame(t(otu_table(marine_genus)))
 
 abund_mixed_dist <- vegdist(abund_mixed, method = "bray")
 vegdist_den <- vegdist(mixed_meta$density, method = "euclidean")
@@ -674,7 +675,7 @@ abund_dist <- vegdist(abund, method = "bray")
 
 vegdist_depth <- vegdist(CA_marine_meta$actual.depth...30, method = "euclidean")
 mantel(abund_dist, vegdist_depth, method = "spearman", permutations = 9999, na.rm = TRUE) #Community dissimilarity increases with depth
-mantel(abund_dist, vegdist_ammp, method = "spearman", permutations = 9999, na.rm = TRUE)
+
 
 
 
