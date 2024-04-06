@@ -653,28 +653,22 @@ ggplot(CA_div, aes(x=line, y=Shannon,fill=line)) +
 
 ###Section 8: Mantel Tests###
 CA_marine_ps_mixed <- subset_samples(marine_genus, depth_cat_1 == "surface" | depth_cat_1 == "intermediate") #sig
-CA_marine_ps_mixed <- subset_samples(CA_marine_ps, depth_cat_1 == "deep") #ns
 CA_marine_ps_mixed <- prune_taxa(taxa_sums(CA_marine_ps_mixed) > 0, CA_marine_ps_mixed) 
 
 CA_marine_meta <- data.frame(sample_data(CA_marine_ps))
 mixed_meta <- data.frame(sample_data(CA_marine_ps_mixed))
 
 abund_mixed <- data.frame(t(otu_table(CA_marine_ps_mixed)))
-abund <- data.frame(t(otu_table(marine_genus)))
 
 abund_mixed_dist <- vegdist(abund_mixed, method = "bray")
 vegdist_den <- vegdist(mixed_meta$density, method = "euclidean")
 vegdist_sal <- vegdist(mixed_meta$sal, method = "euclidean")
-vegdist_chl <- vegdist(mixed_meta$chl, method = "euclidean")
+vegdist_oxy <- vegdist(mixed_meta$oxygen, method = "euclidean")
 
-vegdist_b1 <- vegdist(CA_meta$B1, method = "euclidean")
-vegdist_ammp <- vegdist(CA_meta$AmMP, method = "euclidean")
-vegdist_hmp <- vegdist(CA_meta$HMP, method = "euclidean")
-vegdist_chet <- vegdist(CA_meta$cHET, method = "euclidean")
-vegdist_het<- vegdist(CA_meta$HET, method = "euclidean")
-
+set.seed(1032)
 mantel(abund_mixed_dist, vegdist_den, method = "spearman", permutations = 9999, na.rm = TRUE) #Community dissimilarity in the mixed layer increases with density, i.e. under upwelling 
 mantel(abund_mixed_dist, vegdist_sal, method = "spearman", permutations = 9999, na.rm = TRUE) #Same for salinity
+mantel(abund_mixed_dist, vegdist_oxy, method = "spearman", permutations = 9999, na.rm = TRUE) #Same for oxygen
 
 abund_dist <- vegdist(abund, method = "bray")
 
