@@ -457,7 +457,7 @@ ggplot(data = data.scores.16S, aes(x = PC1, y = PC2))  +
 ##
 ###
 
-###SECTION FIVE: Differential abundance analysis 
+###SECTION FIVE: Differential abundance analysis and MaAsLin2###
 marine_asv <- data.frame(readRDS("raw_counts_RL2103"))
 marine_tax <- data.frame(readRDS("silva_phytoref_taxa_RL2103"))
 
