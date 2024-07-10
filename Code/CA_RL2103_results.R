@@ -739,9 +739,9 @@ mantel(abund_dist, vegdist_depth, method = "spearman", permutations = 9999, na.r
 
 #Stepwise AIC model 
 
-stepwise_data <- data.frame(CA_marine_ps@sam_data) %>% dplyr::select(CUTI, BEUTI, B1:HET, oxygen, density)
+stepwise_data <- data.frame(CA_marine_ps@sam_data) %>% dplyr::select(CUTI, BEUTI, B1:HET, oxygen, density, chl)
 
-stepwise_data <- stepwise_data %>% mutate(across(B1:density, x.trans.norm)) %>% 
+stepwise_data <- stepwise_data %>% mutate(across(B1:chl, x.trans.norm)) %>% 
   mutate(across(B1:density, transformTukey))
 stepwise_data$upwelling <- diffabund_samp_tab$upwell_strength
 
@@ -751,7 +751,7 @@ trc_mod <- lm(CUTI ~ B1+HMP+cHET+HET+AmMP++oxygen+density+B1:AmMP+B1:HET+
 
 set.seed(1111)
 trc_stepmod <- stepAIC(trc_mod, direction = "both")
-summary(trc_stepmod)
+summary(trc_stepmod) #chlorophyll not deemed an important variable
 
 trc_mod_beut <- lm(BEUTI ~ B1+HMP+cHET+HET+AmMP+oxygen+density+B1:AmMP+B1:HET+HMP:AmMP+cHET:HET+
                 B1:cHET+B1:HMP+HMP:cHET+HMP:HET+AmMP:HET+AmMP:cHET, 
