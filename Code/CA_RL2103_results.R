@@ -543,6 +543,67 @@ top_genera_chet_not <- top_genera_trc %>% filter(chet_diffabund == 'FALSE')
 phylum <- microbiome::aggregate_taxa(CA_marine_ps, "Phylum")
 sort(colSums(otu_table(phylum)["Desulfobacterota",])*100)
 
+#Get total relative abundances of differentially abundant ASVs
+
+marine_asv_diffabund <- data.frame(otu_table(marine_phylo_reads)) %>% 
+  mutate(Kingdom = rownames(marine_phylo_reads@otu_table)) %>% 
+  filter(Kingdom %in% diffabund_asvs) %>% select(-Kingdom)
+
+tot_reads <- sum(sample_sums(marine_phylo_reads))
+diffabund_ASV <- data.frame(t(marine_asv_diffabund))
+tot_reads_diffabund <- sum(colSums(diffabund_ASV))
+(tot_reads_diffabund/tot_reads)*100 #differentially abundant ASVs have a cumulative relative abundance of 31.6% across all samples. 
+
+#MaAsLin2 input
+asvs <- rownames(CA_marine_ps@otu_table)                        
+CA_marine_ps_sub <- mutate_tax_table(CA_marine_ps, Species = asvs)
+high_abund_diffabund_asvs <- colnames(diffabund_ASV)                        
+marine_top_diffabund <- phyloseq::subset_taxa(CA_marine_ps_sub, 
+                                              Species %in% high_abund_diffabund_asvs)
+                        
+diffabund_asv_tab <- data.frame(t(marine_top_diffabund@otu_table))
+diffabund_tax_tab <- data.frame(marine_top_diffabund@tax_table)
+diffabund_tax_tab$combined <- paste(diffabund_tax_tab$Species, diffabund_tax_tab$Genus, 
+                                    sep = "; ") 
+colnames(diffabund_asv_tab) <- diffabund_tax_tab$combined
+diffabund_samp_tab <- data.frame(marine_top_diffabund@sam_data)
+                        
+library(Maaslin2)
+
+diffabund_samp_tab <- diffabund_samp_tab %>% 
+  mutate(B1_binned = as.factor(quantcut(B1, q = 4, 
+                                           labels = c("low", "normal", "normal", "high")))) %>% 
+  mutate(HMP_binned = as.factor(quantcut(HMP, q = 4, 
+                                           labels = c("low", "normal", "normal", "high")))) %>%
+  mutate(cHET_binned = as.factor(quantcut(cHET, q = 4, 
+                                           labels = c("low", "normal", "normal", "high")))) %>% 
+  select(B1, B1_binned, HMP, HMP_binned, cHET, cHET_binned, date, depth_cat_2, upwell_strength)
+  
+diffabund_samp_tab$B1_binned <- factor(diffabund_samp_tab$B1_binned, 
+                                       levels = c("normal", "low", "high"))
+diffabund_samp_tab$HMP_binned <- factor(diffabund_samp_tab$HMP_binned, 
+                                       levels = c("normal", "low", "high"))
+diffabund_samp_tab$cHET_binned <- factor(diffabund_samp_tab$cHET_binned, 
+                                       levels = c("normal", "low", "high"))
+diffabund_samp_tab$upwell_strength <- factor(diffabund_samp_tab$upwell_strength, 
+                                       levels = c("intermediate", "weak", "strong"))
+
+Maaslin2(input_metadata = diffabund_samp_tab, input_data = diffabund_asv_tab, 
+                             min_prevalence = 0, normalization = "NONE", transform = "NONE", min_abundance = 0.001,
+         output = "RL2103_Maaslin2_results_trcs", 
+         random_effects = c("date"), 
+         fixed_effects = c("B1_binned", "HMP_binned", "cHET_binned"), 
+         reference = c("B1_binned,normal", "HMP_binned,normal", 
+                       "cHET_binned,normal"))
+
+Maaslin2(input_metadata = diffabund_samp_tab, input_data = diffabund_asv_tab, 
+         min_prevalence = 0, normalization = "NONE", transform = "NONE", min_abundance = 0.001,
+         output = "RL2103_Maaslin2_results_upwelling", 
+         random_effects = c("date"), 
+         fixed_effects = "upwell_strength", 
+         reference = "upwell_strength,intermediate")
+
+
 ###Section Six: Oligotyping
 phylo_all <- readRDS("phylo_for_oligotyping")
 phylo_sar11 <- subset_taxa(phylo_all, Order == "SAR11 clade")
@@ -651,7 +712,7 @@ ggplot(CA_div, aes(x=line, y=Shannon,fill=line)) +
                              method = "kruskal.test",
                              mapping = aes(label =  ..p.signif..))
 
-###Section 8: Mantel Tests###
+###Section 8: Mantel Tests and Stepwise AIC Regression###
 CA_marine_ps_mixed <- subset_samples(marine_genus, depth_cat_1 == "surface" | depth_cat_1 == "intermediate") #sig
 CA_marine_ps_mixed <- prune_taxa(taxa_sums(CA_marine_ps_mixed) > 0, CA_marine_ps_mixed) 
 
@@ -676,7 +737,28 @@ abund_dist <- vegdist(abund, method = "bray")
 vegdist_depth <- vegdist(CA_marine_meta$actual.depth...30, method = "euclidean")
 mantel(abund_dist, vegdist_depth, method = "spearman", permutations = 9999, na.rm = TRUE) #Community dissimilarity increases with depth
 
+#Stepwise AIC model 
 
+stepwise_data <- data.frame(CA_marine_ps@sam_data) %>% dplyr::select(CUTI, BEUTI, B1:HET, oxygen, density)
+
+stepwise_data <- stepwise_data %>% mutate(across(B1:density, x.trans.norm)) %>% 
+  mutate(across(B1:density, transformTukey))
+stepwise_data$upwelling <- diffabund_samp_tab$upwell_strength
+
+trc_mod <- lm(CUTI ~ B1+HMP+cHET+HET+AmMP++oxygen+density+B1:AmMP+B1:HET+
+                B1:cHET+B1:HMP, 
+   data = stepwise_data)
+
+set.seed(1111)
+trc_stepmod <- stepAIC(trc_mod, direction = "both")
+summary(trc_stepmod)
+
+trc_mod_beut <- lm(BEUTI ~ B1+HMP+cHET+HET+AmMP+oxygen+density+B1:AmMP+B1:HET+HMP:AmMP+cHET:HET+
+                B1:cHET+B1:HMP+HMP:cHET+HMP:HET+AmMP:HET+AmMP:cHET, 
+              data = stepwise_data)
+set.seed(1112)
+trc_stepmod_beut <- stepAIC(trc_mod_beut, direction = "both")
+summary(trc_stepmod_beut)
 
 
 
