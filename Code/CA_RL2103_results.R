@@ -577,7 +577,7 @@ diffabund_samp_tab <- diffabund_samp_tab %>%
                                            labels = c("low", "normal", "normal", "high")))) %>%
   mutate(cHET_binned = as.factor(quantcut(cHET, q = 4, 
                                            labels = c("low", "normal", "normal", "high")))) %>% 
-  select(B1, B1_binned, HMP, HMP_binned, cHET, cHET_binned, date, depth_cat_2, upwell_strength)
+  select(B1, B1_binned, HMP, HMP_binned, cHET, cHET_binned, date, depth_cat_1, upwell_strength)
   
 diffabund_samp_tab$B1_binned <- factor(diffabund_samp_tab$B1_binned, 
                                        levels = c("normal", "low", "high"))
@@ -588,20 +588,23 @@ diffabund_samp_tab$cHET_binned <- factor(diffabund_samp_tab$cHET_binned,
 diffabund_samp_tab$upwell_strength <- factor(diffabund_samp_tab$upwell_strength, 
                                        levels = c("intermediate", "weak", "strong"))
 
+diffabund_samp_tab$depth_cat_1 <- factor(diffabund_samp_tab$depth_cat_1, 
+                                             levels = c("surface", "intermediate", "deep"))
+
 Maaslin2(input_metadata = diffabund_samp_tab, input_data = diffabund_asv_tab, 
                              min_prevalence = 0, normalization = "NONE", transform = "NONE", min_abundance = 0.001,
-         output = "RL2103_Maaslin2_results_trcs", 
+         output = "RL2103_Maaslin2_results_hmp_chet", 
          random_effects = c("date"), 
-         fixed_effects = c("B1_binned", "HMP_binned", "cHET_binned"), 
-         reference = c("B1_binned,normal", "HMP_binned,normal", 
-                       "cHET_binned,normal"))
+         fixed_effects = c("HMP_binned", "cHET_binned", "depth_cat_1"), 
+         reference = c("HMP_binned,normal", "cHET_binned,normal", "depth_cat_1,surface"))
 
 Maaslin2(input_metadata = diffabund_samp_tab, input_data = diffabund_asv_tab, 
          min_prevalence = 0, normalization = "NONE", transform = "NONE", min_abundance = 0.001,
-         output = "RL2103_Maaslin2_results_upwelling", 
+         output = "RL2103_Maaslin2_results_b1_het_ammp", 
          random_effects = c("date"), 
-         fixed_effects = "upwell_strength", 
-         reference = "upwell_strength,intermediate")
+         fixed_effects = c("B1_binned", "HET_binned", "AmMP_binned", "depth_cat_1"), 
+         reference = c("B1_binned,normal", "HET_binned,normal", 
+                       "AmMP_binned,normal", "depth_cat_1,surface"))
 
 
 ###Section Six: Oligotyping
