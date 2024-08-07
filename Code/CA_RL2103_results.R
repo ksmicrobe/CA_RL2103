@@ -606,6 +606,13 @@ Maaslin2(input_metadata = diffabund_samp_tab, input_data = diffabund_asv_tab,
          reference = c("B1_binned,normal", "HET_binned,normal", 
                        "AmMP_binned,normal", "depth_cat_1,surface"))
 
+Maaslin2(input_metadata = diffabund_samp_tab, input_data = diffabund_asv_tab, 
+         min_prevalence = 0, normalization = "NONE", transform = "NONE", min_abundance = 0.001,
+         output = "RL2103_Maaslin2_results_upwelling", 
+         random_effects = c("date"), 
+         fixed_effects = "upwell_strength", 
+         reference = "upwell_strength,intermediate")
+
 
 ###Section Six: Oligotyping
 phylo_all <- readRDS("phylo_for_oligotyping")
