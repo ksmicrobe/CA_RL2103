@@ -330,87 +330,9 @@ plot_ordination(marine_genus, marine_genus_ord_cap,
 
 ##
 
-###SECTION FOUR: dTRCs correlations and PCA
+###SECTION FOUR: dTRCs PCA
 
-vectors_data %>% select('var_1', 'var_2' %>% pairs(lower.panel = NULL) #Used this to check for linear assocations 
 
-#thiamine
-cor.test(vectors_data$thiamine, vectors_data$den)
-cor.test(vectors_data$thiamine, vectors_data$temp)
-cor.test(vectors_data$thiamine, vectors_data$oxy)
-cor.test(vectors_data$thiamine, vectors_data$chl)
-cor.test(vectors_data$thiamine, vectors_data$sal)
-cor.test(vectors_data$thiamine, vectors_data$diversity) #0.057
-cor.test(vectors_data$thiamine, vectors_data$shan_diversity)
-cor.test(vectors_data$thiamine, vectors_data$irrad)
-cor.test(vectors_data$thiamine, vectors_data$trans)
-cor.test(vectors_data$thiamine, vectors_data$algal_rich)
-#
-
-#HMP
-cor.test(vectors_data$HMP, vectors_data$den)
-cor.test(vectors_data$HMP, vectors_data$temp)
-cor.test(vectors_data$HMP, vectors_data$oxy)
-cor.test(vectors_data$HMP, vectors_data$chl)
-cor.test(vectors_data$HMP, vectors_data$sal)
-cor.test(vectors_data$HMP, vectors_data$diversity) 
-cor.test(vectors_data$HMP, vectors_data$shan_diversity)
-cor.test(vectors_data$HMP, vectors_data$irrad) #0.039
-cor.test(vectors_data$HMP, vectors_data$trans)
-cor.test(vectors_data$HMP, vectors_data$algal_rich)
-#
-
-#cHET
-cor.test(vectors_data$cHET, vectors_data$den)
-cor.test(vectors_data$cHET, vectors_data$temp)
-cor.test(vectors_data$cHET, vectors_data$oxy)
-cor.test(vectors_data$cHET, vectors_data$chl) #0.041
-cor.test(vectors_data$cHET, vectors_data$sal)
-cor.test(vectors_data$cHET, vectors_data$diversity) 
-cor.test(vectors_data$cHET, vectors_data$shan_diversity)
-cor.test(vectors_data$cHET, vectors_data$irrad)
-cor.test(vectors_data$cHET, vectors_data$trans) #0.0011
-cor.test(vectors_data$cHET, vectors_data$algal_rich) #0.00015
-#
-
-#AmMP
-cor.test(vectors_data$AmMP, vectors_data$den)
-cor.test(vectors_data$AmMP, vectors_data$temp)
-cor.test(vectors_data$AmMP, vectors_data$oxy)
-cor.test(vectors_data$AmMP, vectors_data$chl) #0.021
-cor.test(vectors_data$AmMP, vectors_data$sal)
-cor.test(vectors_data$AmMP, vectors_data$diversity) #0.0027
-cor.test(vectors_data$AmMP, vectors_data$shan_diversity) 
-cor.test(vectors_data$AmMP, vectors_data$irrad)
-cor.test(vectors_data$AmMP, vectors_data$trans) #0.039
-cor.test(vectors_data$AmMP, vectors_data$algal_rich)
-#
-
-#HET
-cor.test(vectors_data$HET, vectors_data$den)
-cor.test(vectors_data$HET, vectors_data$temp)
-cor.test(vectors_data$HET, vectors_data$oxy) #0.059
-cor.test(vectors_data$HET, vectors_data$chl) #0.031
-cor.test(vectors_data$HET, vectors_data$sal)
-cor.test(vectors_data$HET, vectors_data$diversity) #0.00065
-cor.test(vectors_data$HET, vectors_data$shan_diversity)
-cor.test(vectors_data$HET, vectors_data$irrad)
-cor.test(vectors_data$HET, vectors_data$trans) #0.082
-cor.test(vectors_data$HET, vectors_data$algal_rich)
-#
-
-#dTRC co-correlations
-cor.test(vectors_data$thiamine, vectors_data$HMP)
-cor.test(vectors_data$thiamine, vectors_data$AmMP) #7.24e-8
-cor.test(vectors_data$thiamine, vectors_data$cHET)
-cor.test(vectors_data$thiamine, vectors_data$HET)#3.06e-8
-cor.test(vectors_data$HMP, vectors_data$AmMP)#0.0051
-cor.test(vectors_data$HMP, vectors_data$cHET)
-cor.test(vectors_data$HMP, vectors_data$HET)#0.047
-cor.test(vectors_data$cHET, vectors_data$HET)#1.15e-5
-cor.test(vectors_data$AmMP, vectors_data$cHET)#2.31e-7
-cor.test(vectors_data$AmMP, vectors_data$HET)#6.831e-8
-#
 
 #NAV465_19 and FAR138_3 not included since there's no microbial community data for them
 
@@ -750,27 +672,53 @@ mantel(abund_dist, vegdist_depth, method = "spearman", permutations = 9999, na.r
 
 #Stepwise AIC model 
 
-stepwise_data <- data.frame(CA_marine_ps@sam_data) %>% dplyr::select(CUTI, BEUTI, B1:HET, oxygen, density, chl)
 
-stepwise_data <- stepwise_data %>% mutate(across(B1:chl, x.trans.norm)) %>% 
-  mutate(across(B1:density, transformTukey))
+#
+stepwise_data <- data.frame(CA_marine_ps@sam_data) %>% 
+  dplyr::select(CUTI, BEUTI, B1, HMP, cHET, HET, AmMP, oxygen, density, chl, irrad)
+
+stepwise_data <- stepwise_data %>% mutate(across(B1:chl, transformTukey))
 stepwise_data$upwelling <- diffabund_samp_tab$upwell_strength
+stepwise_data$dcm <- diffabund_samp_tab$DCM
 
-trc_mod <- lm(CUTI ~ B1+HMP+cHET+HET+AmMP+oxygen+density+B1:AmMP+B1:HET+HMP:AmMP+cHET:HET+
-                B1:cHET+B1:HMP+HMP:cHET+HMP:HET+AmMP:HET+AmMP:cHET, 
+
+cor.test(stepwise_data$B1, stepwise_data$HMP) #NS
+cor.test(stepwise_data$B1, stepwise_data$AmMP) 
+cor.test(stepwise_data$B1, stepwise_data$cHET) #NS
+cor.test(stepwise_data$B1, stepwise_data$HET) 
+cor.test(stepwise_data$HMP, stepwise_data$AmMP)
+cor.test(stepwise_data$HMP, stepwise_data$cHET) #NS
+cor.test(stepwise_data$HMP, stepwise_data$HET) 
+cor.test(stepwise_data$cHET, stepwise_data$HET)
+cor.test(stepwise_data$AmMP, stepwise_data$cHET)
+cor.test(stepwise_data$AmMP, stepwise_data$HET) 
+cor.test(stepwise_data$oxygen, stepwise_data$density) 
+cor.test(stepwise_data$density, stepwise_data$chl)
+cor.test(stepwise_data$density, stepwise_data$irrad) 
+cor.test(stepwise_data$density, stepwise_data$shannon)
+cor.test(stepwise_data$B1, stepwise_data$shannon) #NS
+cor.test(stepwise_data$HMP, stepwise_data$shannon) #NS
+cor.test(stepwise_data$cHET, stepwise_data$shannon) #NS
+
+trc_mod <- lm(CUTI ~ B1+HMP+cHET+density+oxygen+chl+irrad+density:oxygen+dcm, 
    data = stepwise_data)
 
 set.seed(1111)
 trc_stepmod <- stepAIC(trc_mod, direction = "both")
-summary(trc_stepmod) #chlorophyll not deemed an important variable
+summary(trc_stepmod)
 
-trc_mod_beut <- lm(BEUTI ~ B1+HMP+cHET+HET+AmMP+oxygen+density+B1:AmMP+B1:HET+HMP:AmMP+cHET:HET+
-                B1:cHET+B1:HMP+HMP:cHET+HMP:HET+AmMP:HET+AmMP:cHET, 
+trc_mod_beut <- lm(BEUTI ~ B1+HMP+cHET+density+oxygen+chl+irrad+density:oxygen+dcm, 
               data = stepwise_data)
 set.seed(1112)
 trc_stepmod_beut <- stepAIC(trc_mod_beut, direction = "both")
 summary(trc_stepmod_beut)
 
+library(lmtest)
+bptest(trc_mod) #NS
+bptest(trc_mod_beut) #NS
+library(car)
+vif(trc_stepmod, type = "predictor")
+vif(trc_stepmod_beut, type = "predictor")
 
 
 
