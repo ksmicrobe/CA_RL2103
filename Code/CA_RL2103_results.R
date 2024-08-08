@@ -19,6 +19,7 @@ library(bios2mds)
 library(ANCOMBC)
 library(speedyseq)
 library(msa)
+library(MASS)
 
 ###SECTION ONE: Prepping data & PERMANOVAs###
 marine_counts_taxa <- data.frame(readRDS("total_taxa_counts_marine")) %>% 
@@ -755,8 +756,8 @@ stepwise_data <- stepwise_data %>% mutate(across(B1:chl, x.trans.norm)) %>%
   mutate(across(B1:density, transformTukey))
 stepwise_data$upwelling <- diffabund_samp_tab$upwell_strength
 
-trc_mod <- lm(CUTI ~ B1+HMP+cHET+HET+AmMP++oxygen+density+B1:AmMP+B1:HET+
-                B1:cHET+B1:HMP, 
+trc_mod <- lm(CUTI ~ B1+HMP+cHET+HET+AmMP+oxygen+density+B1:AmMP+B1:HET+HMP:AmMP+cHET:HET+
+                B1:cHET+B1:HMP+HMP:cHET+HMP:HET+AmMP:HET+AmMP:cHET, 
    data = stepwise_data)
 
 set.seed(1111)
