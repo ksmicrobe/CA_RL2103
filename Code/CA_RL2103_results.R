@@ -19,6 +19,9 @@ library(bios2mds)
 library(ANCOMBC)
 library(speedyseq)
 library(msa)
+library(MASS)
+library(lmtest)
+library(car)
 
 ###SECTION ONE: Prepping data & PERMANOVAs###
 marine_counts_taxa <- data.frame(readRDS("total_taxa_counts_marine")) %>% 
@@ -770,30 +773,58 @@ cor.test(stepwise_data$HMP, stepwise_data$HET)
 cor.test(stepwise_data$cHET, stepwise_data$HET)
 cor.test(stepwise_data$AmMP, stepwise_data$cHET)
 cor.test(stepwise_data$AmMP, stepwise_data$HET) 
-cor.test(stepwise_data$oxygen, stepwise_data$density) 
-cor.test(stepwise_data$density, stepwise_data$chl)
-cor.test(stepwise_data$density, stepwise_data$irrad) 
-cor.test(stepwise_data$density, stepwise_data$shannon)
-cor.test(stepwise_data$B1, stepwise_data$shannon) #NS
-cor.test(stepwise_data$HMP, stepwise_data$shannon) #NS
-cor.test(stepwise_data$cHET, stepwise_data$shannon) #NS
 
-trc_mod <- lm(CUTI ~ B1+HMP+cHET+density+oxygen+chl+irrad+density:oxygen+dcm, 
-   data = stepwise_data)
+B1_mod <- lm(B1 ~ CUTI+HMP+cHET+density+irrad+dcm+chl+oxygen, 
+              data = stepwise_data)
+
+
+HMP_mod <- lm(HMP ~ CUTI+B1+cHET+density+irrad+dcm+chl+oxygen, 
+             data = stepwise_data)
+
+
+cHET_mod <- lm(cHET ~ CUTI+B1+HMP+density+irrad+dcm+chl+oxygen, 
+             data = stepwise_data)
+
+
+HET_mod <- lm(HET ~ CUTI+HMP+cHET+density+irrad+dcm+chl+oxygen, #B1 caused heteroskedasticity and was removed
+               data = stepwise_data)
+
+
+AmMP_mod <- lm(AmMP ~ CUTI+B1+HMP+cHET+density+irrad+dcm+chl+oxygen, 
+               data = stepwise_data)
 
 set.seed(1111)
-trc_stepmod <- stepAIC(trc_mod, direction = "both")
-summary(trc_stepmod)
+HMP_stepmod <- stepAIC(HMP_mod, direction = "both")
+summary(HMP_stepmod)
 
-trc_mod_beut <- lm(BEUTI ~ B1+HMP+cHET+density+oxygen+chl+irrad+density:oxygen+dcm, 
-              data = stepwise_data)
-set.seed(1112)
-trc_stepmod_beut <- stepAIC(trc_mod_beut, direction = "both")
-summary(trc_stepmod_beut)
 
-library(lmtest)
-bptest(trc_mod) #NS
-bptest(trc_mod_beut) #NS
-library(car)
-vif(trc_stepmod, type = "predictor")
-vif(trc_stepmod_beut, type = "predictor")
+set.seed(1111)
+B1_stepmod <- stepAIC(B1_mod, direction = "both")
+
+
+set.seed(1111)
+cHET_stepmod <- stepAIC(cHET_mod, direction = "both")
+
+
+set.seed(1111)
+HET_stepmod <- stepAIC(HET_mod, direction = "both")
+
+
+set.seed(1111)
+AmMP_stepmod <- stepAIC(AmMP_mod, direction = "both")
+
+
+bptest(cHET_stepmod)
+bptest(B1_stepmod) 
+bptest(HMP_stepmod)
+bptest(HET_stepmod) 
+bptest(AmMP_stepmod)
+
+vif(cHET_stepmod)
+vif(B1_stepmod)
+vif(HMP_stepmod)
+vif(HET_stepmod)
+vif(AmMP_stepmod)
+
+
+                        
